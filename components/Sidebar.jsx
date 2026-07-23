@@ -171,6 +171,13 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
               Recycle Bin
             </a>
             <a
+              href="/admin/seed"
+              className={`sidebar-link${isActive("/admin/seed") ? " active" : ""}`}
+            >
+              <Upload size={18} />
+              Seed Data
+            </a>
+            <a
               href="/admin/create-account"
               className={`sidebar-link${isActive("/admin/create-account") ? " active" : ""}`}
             >
