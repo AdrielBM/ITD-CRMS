@@ -22,7 +22,25 @@ export default async function ReviewQueuePage() {
   const mySteps = WORKFLOW_STEPS.filter((s) => s.role === role);
   const stepLabel = mySteps[0]?.label ?? "Review";
 
-  const { data: pendingSubmissions } = await supabase
+  // Scope coordinator's view to their assigned programs
+  let scopedFacultyIds = [];
+  if (role === "Coordinator") {
+    const { data: progCoords } = await supabase
+      .from("program_coordinators")
+      .select("program_id")
+      .eq("user_id", user.id);
+    const progIds = (progCoords ?? []).map((pc) => pc.program_id).filter(Boolean);
+    const isDeptWide = (progCoords ?? []).some((pc) => pc.program_id === null);
+    if (progIds.length > 0 && !isDeptWide) {
+      const { data: facProfiles } = await supabase
+        .from("faculty_profiles")
+        .select("user_id")
+        .in("program_id", progIds);
+      scopedFacultyIds = (facProfiles ?? []).map((fp) => fp.user_id);
+    }
+  }
+
+  let pendingQuery = supabase
     .from("submissions")
     .select(`
       id, status, current_step, created_at, updated_at,
@@ -39,10 +57,15 @@ export default async function ReviewQueuePage() {
       approvals ( id, step_number, step_role, status, remarks, created_at, reviewer_id )
     `)
     .in("current_step", mySteps.map((s) => s.step))
-    .eq("status", "submitted")
-    .order("updated_at", { ascending: true });
+    .eq("status", "submitted");
 
-  const { data: reviewedSubmissions } = await supabase
+  if (scopedFacultyIds.length > 0) {
+    pendingQuery = pendingQuery.in("assignments.faculty_id", scopedFacultyIds);
+  }
+
+  const { data: pendingSubmissions } = await pendingQuery.order("updated_at", { ascending: true });
+
+  let reviewedQuery = supabase
     .from("submissions")
     .select(`
       id, status, current_step, created_at, updated_at,
@@ -60,9 +83,13 @@ export default async function ReviewQueuePage() {
     `)
     .in("current_step", mySteps.map((s) => s.step))
     .in("status", ["completed", "needs_revision"])
-    .eq("approvals.step_role", role)
-    .order("updated_at", { ascending: false })
-    .limit(20);
+    .eq("approvals.step_role", role);
+
+  if (scopedFacultyIds.length > 0) {
+    reviewedQuery = reviewedQuery.in("assignments.faculty_id", scopedFacultyIds);
+  }
+
+  const { data: reviewedSubmissions } = await reviewedQuery.order("updated_at", { ascending: false }).limit(20);
 
   return (
     <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/submissions/review">

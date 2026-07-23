@@ -1,4 +1,6 @@
-export default function CoordinatorDashboard({ activeSemesterLabel, facultyCount, instances, pendingCoordinator }) {
+export default function CoordinatorDashboard({ activeSemesterLabel, facultyCount, instances, pendingCoordinator, coordinatorProgramIds, isDepartmentWide }) {
+  const scoped = coordinatorProgramIds.length > 0 && !isDepartmentWide;
+
   return (
     <div>
       <div className="stat-grid">
@@ -7,9 +9,8 @@ export default function CoordinatorDashboard({ activeSemesterLabel, facultyCount
           <p className="stat-value orange">{pendingCoordinator}</p>
         </div>
         <div className="stat-card">
-          <p className="stat-label">Faculty (All Programs)</p>
+          <p className="stat-label">{scoped ? "Faculty (My Program)" : "Faculty (All Programs)"}</p>
           <p className="stat-value">{facultyCount}</p>
-          <p className="stat-hint">Not yet scoped by program</p>
         </div>
         <div className="stat-card">
           <p className="stat-label">Requirement Instances</p>
@@ -21,10 +22,6 @@ export default function CoordinatorDashboard({ activeSemesterLabel, facultyCount
           <p className="stat-value" style={{ color: "#9ca3af" }}>—</p>
           <p className="stat-hint">Needs Phase 4</p>
         </div>
-      </div>
-
-      <div className="card-orange" style={{ marginBottom: 20, fontSize: 14, color: "#9a3412" }}>
-        This account role is currently shared by IT and CS Coordinators — the system doesn&rsquo;t yet scope submissions or faculty lists to a single program.
       </div>
 
       <a href="/submissions/review" className="btn btn-primary btn-sm" style={{ marginBottom: 24, display: "inline-flex" }}>

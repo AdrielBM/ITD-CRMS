@@ -19,19 +19,45 @@ export default async function DashboardPage() {
   const { user, role, profile, error } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
 
-  const [{ data: activeSemester }, { count: facultyCount }, { count: organizationCount }] =
+  const [{ data: activeSemester }, { data: coordinatorPrograms }, { count: organizationCount }] =
     await Promise.all([
       supabase
         .from("semesters")
         .select("id, name, academic_years ( label )")
         .eq("is_active", true)
         .maybeSingle(),
-      supabase
-        .from("users")
-        .select("id, roles!role_id!inner(name)", { count: "exact", head: true })
-        .eq("roles.name", "Faculty"),
+      role === "Coordinator"
+        ? supabase
+            .from("program_coordinators")
+            .select("program_id")
+            .eq("user_id", user.id)
+        : { data: [] },
       supabase.from("organizations").select("id", { count: "exact", head: true }),
     ]);
+
+  const coordinatorProgramIds = (coordinatorPrograms ?? []).map((pc) => pc.program_id).filter(Boolean);
+  const isDepartmentWide = (coordinatorPrograms ?? []).some((pc) => pc.program_id === null);
+
+  // Faculty query — scoped if coordinator has specific programs
+  let facultyQuery = supabase
+    .from("users")
+    .select("id, roles!role_id!inner(name)", { count: "exact", head: true })
+    .eq("roles.name", "Faculty");
+
+  if (role === "Coordinator" && coordinatorProgramIds.length > 0 && !isDepartmentWide) {
+    const { data: scopedFaculty } = await supabase
+      .from("faculty_profiles")
+      .select("user_id")
+      .in("program_id", coordinatorProgramIds);
+    const scopedIds = (scopedFaculty ?? []).map((f) => f.user_id);
+    if (scopedIds.length > 0) {
+      facultyQuery = facultyQuery.in("id", scopedIds);
+    } else {
+      facultyQuery = facultyQuery.in("id", []);
+    }
+  }
+
+  const { count: facultyCount } = await facultyQuery;
 
   const activeSemesterLabel = activeSemester
     ? `${activeSemester.academic_years?.label ?? ""} · ${activeSemester.name}`
@@ -167,12 +193,28 @@ export default async function DashboardPage() {
       />
     );
   } else if (role === "Coordinator") {
+    // Scope pending submissions to coordinator's program faculty
+    let pendingQuery = supabase
+      .from("submissions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "submitted")
+      .eq("current_step", 0);
+
+    if (coordinatorProgramIds.length > 0 && !isDepartmentWide) {
+      const { data: scopedFaculty } = await supabase
+        .from("faculty_profiles")
+        .select("user_id")
+        .in("program_id", coordinatorProgramIds);
+      const scopedIds = (scopedFaculty ?? []).map((f) => f.user_id);
+      if (scopedIds.length > 0) {
+        pendingQuery = pendingQuery.in("faculty_id", scopedIds);
+      } else {
+        pendingQuery = pendingQuery.in("faculty_id", []);
+      }
+    }
+
     const { count: pendingCoordinator } = activeSemester
-      ? await supabase
-          .from("submissions")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "submitted")
-          .eq("current_step", 0)
+      ? await pendingQuery
       : { count: 0 };
 
     content = (
@@ -181,6 +223,8 @@ export default async function DashboardPage() {
         facultyCount={facultyCount ?? 0}
         instances={instanceList}
         pendingCoordinator={pendingCoordinator ?? 0}
+        coordinatorProgramIds={coordinatorProgramIds}
+        isDepartmentWide={isDepartmentWide}
       />
     );
   } else if (role === "Faculty") {
