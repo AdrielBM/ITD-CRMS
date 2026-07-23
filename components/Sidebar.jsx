@@ -8,6 +8,7 @@ import {
   CheckCircle,
   GraduationCap,
   UserPlus,
+  Settings,
   LogOut,
 } from "lucide-react";
 
@@ -101,13 +102,32 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
         })}
 
         {role === "Chair" && (
-          <a
-            href="/admin/create-account"
-            className={`sidebar-link${isActive("/admin/create-account") ? " active" : ""}`}
-          >
-            <UserPlus size={18} />
-            Create Account
-          </a>
+          <>
+            <div style={{ padding: "16px 20px 6px", fontSize: 11, color: "#a5d6a7", textTransform: "uppercase", letterSpacing: "1px" }}>
+              Administration
+            </div>
+            <a
+              href="/admin/users"
+              className={`sidebar-link${isActive("/admin/users") ? " active" : ""}`}
+            >
+              <Settings size={18} />
+              User Management
+            </a>
+            <a
+              href="/admin/activity"
+              className={`sidebar-link${isActive("/admin/activity") ? " active" : ""}`}
+            >
+              <FileText size={18} />
+              Activity Log
+            </a>
+            <a
+              href="/admin/create-account"
+              className={`sidebar-link${isActive("/admin/create-account") ? " active" : ""}`}
+            >
+              <UserPlus size={18} />
+              Create Account
+            </a>
+          </>
         )}
       </nav>
 
