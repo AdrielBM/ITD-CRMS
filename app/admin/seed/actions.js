@@ -24,11 +24,47 @@ const FACULTY = [
   "Mr. Gillian Kyle D. Catahan",
 ];
 
-// Role assignments
+// Role assignments (primary role)
 const ROLE_MAP = {
   "Dr. Michelle C. Tanega": "Chair",
   "Ms. Arvel O. Himor": "Secretary",
   "Ms. Dezza Anne A. Peregrina": "Records",
+  "Mr. Raven Dave R. Gallardo": "Student Org Leader",
+  "Ms. Dezza Anne A. Peregrina": "Records",
+  "Mr. Gillian Kyle D. Catahan": "Student Org Leader",
+  "Ms. Flordeluna B. Merlan": "Student Org Leader",
+  "Dr. Angelito L. Catajan Jr.": "Coordinator",
+  "Dr. Sherrlyn M. Rasdas": "Coordinator",
+};
+
+// Multi-role assignments (additional roles beyond primary)
+const ROLE_ADDITIONS = {
+  "Mr. Raven Dave R. Gallardo": ["Faculty"],
+  "Mr. Gillian Kyle D. Catahan": ["Faculty"],
+  "Ms. Flordeluna B. Merlan": ["Faculty"],
+};
+
+// Program assignments for faculty profiles
+const PROGRAM_ASSIGNMENTS = {
+  // BSIT faculty
+  "Dr. Michelle C. Tanega": "BSIT",
+  "Prof. Jeffrey F. Papa": "BSIT",
+  "Dr. Ricky Jay A. Riel": "BSIT",
+  "Mr. Henry R. Balanza": "BSIT",
+  "Mr. Marc Luigi G. Timola": "BSIT",
+  "Mr. Jomari M. Launio": "BSIT",
+  "Ms. Flordeluna B. Merlan": "BSIT",
+  "Mr. Raven Dave R. Gallardo": "BSIT",
+  "Mr. Gillian Kyle D. Catahan": "BSIT",
+  "Dr. Angelito L. Catajan Jr.": "BSIT",
+  "Dr. Sherrlyn M. Rasdas": "BSIT",
+  // BSCS faculty
+  "Dr. Rossian V. Perea": "BSCS",
+  "Ms. Arvel O. Himor": "BSCS",
+  "Mr. Gabriel Christian D. Arcega": "BSCS",
+  "Mr. Mac John T. Poblete": "BSCS",
+  "Ms. Kimberly Rose P. Bautista": "BSCS",
+  "Ms. Dezza Anne A. Peregrina": "BSCS",
 };
 
 const PROGRAMS = [
@@ -140,6 +176,11 @@ export async function seedAll() {
   const roleIdMap = {};
   for (const r of roles ?? []) roleIdMap[r.name] = r.id;
 
+  // Map program codes to IDs
+  const { data: progData } = await supabase.from("programs").select("id, code");
+  const progIdMap = {};
+  for (const p of progData ?? []) progIdMap[p.code] = p.id;
+
   for (const name of FACULTY) {
     const email = makeEmail(name);
     const password = makePassword(name);
@@ -166,22 +207,64 @@ export async function seedAll() {
       });
 
       if (profileError) { results.errors.push(`${name} profile: ${profileError.message}`); continue; }
+
+      // Create faculty_profiles with program assignment
+      const progCode = PROGRAM_ASSIGNMENTS[name];
+      const progId = progCode ? progIdMap[progCode] : null;
+      if (progId) {
+        await supabase.from("faculty_profiles").upsert({
+          user_id: created.user.id,
+          program_id: progId,
+        }).maybeSingle();
+      }
+
+      // Add multi-role assignments
+      const extraRoles = ROLE_ADDITIONS[name] ?? [];
+      for (const rName of extraRoles) {
+        const rId = roleIdMap[rName];
+        if (rId) {
+          await supabase.from("user_roles").upsert({
+            user_id: created.user.id,
+            role_id: rId,
+          }).maybeSingle();
+        }
+      }
+
       results.created++;
     } catch (err) {
       results.errors.push(`${name}: ${err.message}`);
     }
   }
 
-  // --- 6. Organizations ---
+  // --- 6. Organizations & Org Leaders ---
   const orgs = [
     { name: "IT Society", acronym: "ITS" },
     { name: "Computer Science Guild", acronym: "CSG" },
     { name: "Junior Philippine Computing Society", acronym: "JPCS" },
   ];
+  const createdOrgs = [];
   for (const o of orgs) {
     const { data: existing } = await supabase.from("organizations").select("id").eq("acronym", o.acronym).maybeSingle();
-    if (!existing) {
-      await supabase.from("organizations").insert(o);
+    if (existing) {
+      createdOrgs.push(existing);
+    } else {
+      const { data: ins } = await supabase.from("organizations").insert(o).select("id").single();
+      if (ins) createdOrgs.push(ins);
+    }
+  }
+
+  // Assign org_leader_id for Student Org Leaders
+  const orgLeaderMap = {
+    "IT Society": "Mr. Raven Dave R. Gallardo",
+    "Computer Science Guild": "Mr. Gillian Kyle D. Catahan",
+    "Junior Philippine Computing Society": "Ms. Flordeluna B. Merlan",
+  };
+  for (const org of createdOrgs) {
+    const leaderName = orgLeaderMap[org.name];
+    if (!leaderName) continue;
+    const { data: leaderUser } = await supabase.from("users").select("id").eq("full_name", leaderName).maybeSingle();
+    if (leaderUser) {
+      await supabase.from("organizations").update({ org_leader_id: leaderUser.id }).eq("id", org.id);
     }
   }
 
@@ -218,6 +301,27 @@ export async function seedAll() {
           }
         }
       }
+    }
+  }
+
+  // --- 8. Program Coordinators ---
+  const coordinatorAssignments = [
+    { name: "Dr. Angelito L. Catajan Jr.", programCode: "BSIT" },
+    { name: "Dr. Sherrlyn M. Rasdas", programCode: "BSIT" },
+  ];
+  for (const ca of coordinatorAssignments) {
+    const { data: coordUser } = await supabase.from("users").select("id").eq("full_name", ca.name).maybeSingle();
+    if (!coordUser) continue;
+    const pId = progIdMap[ca.programCode];
+    if (!pId) continue;
+    const { data: existingC } = await supabase
+      .from("program_coordinators")
+      .select("id")
+      .eq("user_id", coordUser.id)
+      .eq("program_id", pId)
+      .maybeSingle();
+    if (!existingC) {
+      await supabase.from("program_coordinators").insert({ user_id: coordUser.id, program_id: pId });
     }
   }
 
