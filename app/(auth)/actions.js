@@ -20,7 +20,8 @@ export async function loginAction(formData) {
 
 export async function logoutAction() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  if (error) return { error: error.message };
   redirect("/login");
 }
 

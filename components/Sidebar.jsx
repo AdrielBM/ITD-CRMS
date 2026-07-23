@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { logoutAction } from "@/app/(auth)/actions";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -35,7 +35,9 @@ const SETTINGS_LINKS = [
 ];
 
 export default function Sidebar({ fullName, email, role, currentPath }) {
+  const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [loggingOut, setLoggingOut] = useState(false);
   const isReviewer = ["Chair", "Secretary", "Records", "Coordinator"].includes(role);
 
   useEffect(() => {
@@ -195,12 +197,21 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
       </nav>
 
       <div className="sidebar-footer">
-        <form action={logoutAction}>
-          <button type="submit" className="sidebar-link" style={{ width: "100%", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14 }}>
-            <LogOut size={18} />
-            Sign Out
-          </button>
-        </form>
+        <button
+          onClick={async () => {
+            if (loggingOut) return;
+            setLoggingOut(true);
+            const supabase = (await import("@/lib/supabase/browser")).createClient();
+            await supabase.auth.signOut();
+            router.push("/login");
+          }}
+          disabled={loggingOut}
+          className="sidebar-link"
+          style={{ width: "100%", border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, textAlign: "left" }}
+        >
+          <LogOut size={18} />
+          {loggingOut ? "Signing out…" : "Sign Out"}
+        </button>
       </div>
     </div>
   );
