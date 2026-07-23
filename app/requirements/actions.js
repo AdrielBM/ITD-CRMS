@@ -135,7 +135,7 @@ export async function bulkAssignAllFacultyForSemester(formData) {
 
   const { data: faculty } = await supabase
     .from("users")
-    .select("id, roles!inner(name)")
+    .select("id, roles!role_id!inner(name)")
     .eq("roles.name", "Faculty");
 
   const instanceIds = (instances ?? []).map((i) => i.id);

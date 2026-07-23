@@ -36,7 +36,7 @@ export default async function RequirementsPage() {
     supabase.from("semesters").select("id, name, academic_years ( label )").order("id", { ascending: false }),
     supabase.from("requirement_instances").select("*, requirement_templates ( name ), semesters ( name, academic_years ( label ) )").order("id", { ascending: false }),
     supabase.from("assignments").select("id, requirement_instances ( id, requirement_templates ( name ), semesters ( name ) ), faculty:faculty_id ( full_name ), organizations ( name )").order("id", { ascending: false }),
-    supabase.from("users").select("id, full_name, roles!inner(name)").eq("roles.name", "Faculty").order("full_name"),
+    supabase.from("users").select("id, full_name, roles!role_id!inner(name)").eq("roles.name", "Faculty").order("full_name"),
     supabase.from("organizations").select("id, name").order("name"),
   ]);
 

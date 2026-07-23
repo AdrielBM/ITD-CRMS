@@ -28,7 +28,7 @@ export default async function DashboardPage() {
         .maybeSingle(),
       supabase
         .from("users")
-        .select("id, roles!inner(name)", { count: "exact", head: true })
+        .select("id, roles!role_id!inner(name)", { count: "exact", head: true })
         .eq("roles.name", "Faculty"),
       supabase.from("organizations").select("id", { count: "exact", head: true }),
     ]);
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
   if (role === "Chair") {
     const { data: recentUsers } = await supabase
       .from("users")
-      .select("id, full_name, roles ( name )")
+      .select("id, full_name, roles!role_id ( name )")
       .order("created_at", { ascending: false })
       .limit(5);
 

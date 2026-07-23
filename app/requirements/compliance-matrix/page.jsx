@@ -38,7 +38,7 @@ export default async function ComplianceMatrixPage() {
 
   const { data: faculty } = await supabase
     .from("users")
-    .select("id, full_name, roles!inner(name)")
+    .select("id, full_name, roles!role_id!inner(name)")
     .eq("roles.name", "Faculty")
     .order("full_name");
 

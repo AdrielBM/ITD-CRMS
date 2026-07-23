@@ -13,7 +13,7 @@ export default async function FacultyPage() {
 
   const [{ data: faculty, error: facultyError }, { data: programs }] = await Promise.all([
     supabase.from("users")
-      .select("id, full_name, email, roles!inner(name), faculty_profiles!faculty_profiles_user_id_fkey(program_id, position, employment_type)")
+      .select("id, full_name, email, roles!role_id!inner(name), faculty_profiles!faculty_profiles_user_id_fkey(program_id, position, employment_type)")
       .eq("roles.name", "Faculty").order("full_name"),
     supabase.from("programs").select("id, name, code").order("name"),
   ]);

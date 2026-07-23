@@ -12,7 +12,7 @@ export default async function CreateAccountPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("id, full_name, roles ( name ), email")
+    .select("id, full_name, roles!role_id ( name ), email")
     .eq("id", user.id)
     .single();
 

@@ -52,7 +52,7 @@ export async function createAccountAction(formData) {
 
   const { data: callerProfile } = await supabase
     .from("users")
-    .select("roles ( name )")
+    .select("roles!role_id ( name )")
     .eq("id", caller.id)
     .single();
 
