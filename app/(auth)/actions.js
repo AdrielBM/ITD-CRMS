@@ -62,8 +62,10 @@ export async function createAccountAction(formData) {
 
   const email = formData.get("email");
   const fullName = formData.get("full_name");
-  const roleId = Number(formData.get("role_id"));
+  const roleIds = formData.getAll("role_ids").map(Number).filter(Boolean);
   const tempPassword = formData.get("temp_password");
+
+  if (roleIds.length === 0) return { error: "At least one role must be selected." };
 
   const admin = createAdminClient();
 
@@ -79,10 +81,15 @@ export async function createAccountAction(formData) {
     id: created.user.id,
     email,
     full_name: fullName,
-    role_id: roleId,
+    role_id: roleIds[0],
   });
 
   if (profileError) return { error: profileError.message };
+
+  // Insert additional roles via user_roles
+  const userRolesRows = roleIds.map((rid) => ({ user_id: created.user.id, role_id: rid }));
+  const { error: urError } = await admin.from("user_roles").upsert(userRolesRows, { onConflict: "user_id,role_id" });
+  if (urError) return { error: `Role assignment issue: ${urError.message}` };
 
   return { success: `Account created for ${email}.` };
 }

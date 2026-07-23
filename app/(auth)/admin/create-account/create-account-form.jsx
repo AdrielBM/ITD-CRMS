@@ -33,15 +33,20 @@ export default function CreateAccountForm({ roles }) {
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: "block", marginBottom: 6, fontSize: 14, fontWeight: 500, color: "#444" }}>
-          Role
+          Roles <span style={{ fontWeight: 400, color: "#9ca3af" }}>(select one or more)</span>
         </label>
-        <select name="role_id" required className="system-input" style={{ marginBottom: 0 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "8px 0" }}>
           {roles.map((r) => (
-            <option key={r.id} value={r.id}>
+            <label key={r.id} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 12px", border: "1px solid #d1d5db", borderRadius: 8,
+              cursor: "pointer", fontSize: 14, background: "white",
+            }}>
+              <input type="checkbox" name="role_ids" value={r.id} defaultChecked={roles.length === 1} />
               {r.name}
-            </option>
+            </label>
           ))}
-        </select>
+        </div>
       </div>
 
       <div style={{ marginBottom: 20 }}>
