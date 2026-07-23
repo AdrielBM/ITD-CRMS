@@ -1,6 +1,5 @@
 "use client";
 
-import { useOptimistic, useRef } from "react";
 import { addUserRole, removeUserRole } from "./actions";
 
 function RoleBadge({ roleName, userId, optimistic, pending }) {
@@ -33,7 +32,7 @@ export default function MultiRoleManager({ userId, assignedRoles, allRoles }) {
         <form action={addUserRole} style={{ display: "inline" }}>
           <input type="hidden" name="user_id" value={userId} />
           <select name="role_name" defaultValue=""
-            onChange={(e) => { if (e.target.value) e.target.form.requestSubmit(); }}
+            onChange={(e) => { if (e.target.value) e.target.form.submit(); }}
             style={{ fontSize: 12, padding: "2px 4px", border: "1px solid #d1d5db", borderRadius: 4, background: "white", minWidth: 80 }}>
             <option value="">+ Add</option>
             {unassigned.map((r) => (
