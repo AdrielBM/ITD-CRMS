@@ -156,6 +156,13 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
               User Management
             </a>
             <a
+              href="/admin/organizations"
+              className={`sidebar-link${isActive("/admin/organizations") ? " active" : ""}`}
+            >
+              <Building2 size={18} />
+              Organizations
+            </a>
+            <a
               href="/admin/activity"
               className={`sidebar-link${isActive("/admin/activity") ? " active" : ""}`}
             >
