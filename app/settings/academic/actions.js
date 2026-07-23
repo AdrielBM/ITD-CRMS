@@ -18,7 +18,11 @@ export async function createProgram(formData) {
 
 export async function deleteProgram(formData) {
   const supabase = await createClient();
-  const { error } = await supabase.from("programs").delete().eq("id", formData.get("id"));
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from("programs").update({
+    deleted_at: new Date().toISOString(),
+    deleted_by: user?.id,
+  }).eq("id", formData.get("id"));
   if (error) return { error: error.message };
   revalidatePath(PATH);
 }
@@ -47,7 +51,11 @@ export async function setActiveAcademicYear(formData) {
 
 export async function deleteAcademicYear(formData) {
   const supabase = await createClient();
-  const { error } = await supabase.from("academic_years").delete().eq("id", formData.get("id"));
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from("academic_years").update({
+    deleted_at: new Date().toISOString(),
+    deleted_by: user?.id,
+  }).eq("id", formData.get("id"));
   if (error) return { error: error.message };
   revalidatePath(PATH);
 }
@@ -79,7 +87,11 @@ export async function setActiveSemester(formData) {
 
 export async function deleteSemester(formData) {
   const supabase = await createClient();
-  const { error } = await supabase.from("semesters").delete().eq("id", formData.get("id"));
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from("semesters").update({
+    deleted_at: new Date().toISOString(),
+    deleted_by: user?.id,
+  }).eq("id", formData.get("id"));
   if (error) return { error: error.message };
   revalidatePath(PATH);
 }

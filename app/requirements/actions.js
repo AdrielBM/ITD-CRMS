@@ -41,9 +41,10 @@ export async function toggleTemplateActive(formData) {
 
 export async function deleteTemplate(formData) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase
     .from("requirement_templates")
-    .delete()
+    .update({ deleted_at: new Date().toISOString(), deleted_by: user?.id })
     .eq("id", formData.get("id"));
   if (error) return { error: error.message };
   revalidatePath(PATH);
@@ -72,9 +73,10 @@ export async function createInstance(formData) {
 
 export async function deleteInstance(formData) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase
     .from("requirement_instances")
-    .delete()
+    .update({ deleted_at: new Date().toISOString(), deleted_by: user?.id })
     .eq("id", formData.get("id"));
   if (error) return { error: error.message };
   revalidatePath(PATH);
@@ -190,7 +192,10 @@ export async function createAssignment(formData) {
 
 export async function deleteAssignment(formData) {
   const supabase = await createClient();
-  const { error } = await supabase.from("assignments").delete().eq("id", formData.get("id"));
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from("assignments").update({
+    deleted_at: new Date().toISOString(), deleted_by: user?.id,
+  }).eq("id", formData.get("id"));
   if (error) return { error: error.message };
   revalidatePath(PATH);
   revalidatePath(`${PATH}/compliance-matrix`);

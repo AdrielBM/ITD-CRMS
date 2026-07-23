@@ -15,6 +15,7 @@ import {
   Settings,
   Bell,
   Building2,
+  Trash2,
   LogOut,
 } from "lucide-react";
 
@@ -161,6 +162,13 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
             >
               <FileText size={18} />
               Activity Log
+            </a>
+            <a
+              href="/admin/recycle"
+              className={`sidebar-link${isActive("/admin/recycle") ? " active" : ""}`}
+            >
+              <Trash2 size={18} />
+              Recycle Bin
             </a>
             <a
               href="/admin/create-account"

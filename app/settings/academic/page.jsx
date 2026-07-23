@@ -16,9 +16,9 @@ export default async function AcademicSettingsPage() {
   const canWritePrograms = can(permissions, "Programs", "CRUD");
 
   const [{ data: programs }, { data: academicYears }, { data: semesters }] = await Promise.all([
-    supabase.from("programs").select("*").order("name"),
-    supabase.from("academic_years").select("*").order("label", { ascending: false }),
-    supabase.from("semesters").select("*, academic_years ( label )").order("academic_year_id", { ascending: false }),
+    supabase.from("programs").select("*").is("deleted_at", null).order("name"),
+    supabase.from("academic_years").select("*").is("deleted_at", null).order("label", { ascending: false }),
+    supabase.from("semesters").select("*, academic_years ( label )").is("deleted_at", null).order("academic_year_id", { ascending: false }),
   ]);
 
   return (
