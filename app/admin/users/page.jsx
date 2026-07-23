@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserAccess } from "@/lib/auth/permissions";
 import AppShell from "@/components/AppShell";
-import { updateUserRole, toggleUserActive, resetUserPassword } from "./actions";
+import RoleSelector from "./role-selector";
+import { toggleUserActive, resetUserPassword } from "./actions";
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -45,16 +46,7 @@ export default async function AdminUsersPage() {
                   <td style={{ fontWeight: 500 }}>{u.full_name}</td>
                   <td style={{ color: "#6b7280", fontSize: 14 }}>{u.email}</td>
                   <td>
-                    <form action={updateUserRole}>
-                      <input type="hidden" name="user_id" value={u.id} />
-                      <select name="role_id" defaultValue={u.roles?.id ?? ""}
-                        className="input" onChange={(e) => e.target.form.requestSubmit()}
-                        style={{ width: "auto", minWidth: 130, marginBottom: 0 }}>
-                        {(roles ?? []).map((r) => (
-                          <option key={r.id} value={r.id}>{r.name}</option>
-                        ))}
-                      </select>
-                    </form>
+                    <RoleSelector userId={u.id} currentRoleId={u.roles?.id} roles={roles ?? []} />
                   </td>
                   <td>
                     <form action={toggleUserActive}>
