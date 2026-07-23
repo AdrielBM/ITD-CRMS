@@ -97,7 +97,7 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
 
         {isReviewer && (
           <>
-            <div style={{ padding: "16px 20px 6px", fontSize: 11, color: "#a5d6a7", textTransform: "uppercase", letterSpacing: "1px" }}>
+            <div className="sidebar-section-label">
               Reviews
             </div>
             {REVIEW_LINKS.map((item) => {
@@ -116,7 +116,7 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
           </>
         )}
 
-        <div style={{ padding: "16px 20px 6px", fontSize: 11, color: "#a5d6a7", textTransform: "uppercase", letterSpacing: "1px" }}>
+        <div className="sidebar-section-label">
           Settings
         </div>
         {SETTINGS_LINKS.map((item) => {
@@ -145,7 +145,7 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
 
         {role === "Chair" && (
           <>
-            <div style={{ padding: "16px 20px 6px", fontSize: 11, color: "#a5d6a7", textTransform: "uppercase", letterSpacing: "1px" }}>
+            <div className="sidebar-section-label">
               Administration
             </div>
             <a

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
+import { Shield } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setReady(true);
       }
@@ -46,36 +47,66 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#e0e0e0", padding: "0 16px" }}>
-      <div style={{ width: "100%", maxWidth: 400 }}>
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #f0f2f5 0%, #e5e7eb 50%, #d1d5db 100%)",
+      padding: "0 16px",
+    }}>
+      <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#222" }}>Set New Password</h1>
-          <p style={{ margin: "4px 0 0 0", fontSize: 14, color: "#888" }}>Choose a new password for your account</p>
+          <div style={{
+            width: 64, height: 64, margin: "0 auto 16px auto",
+            background: "linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%)",
+            borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(27,94,32,0.2)",
+          }}>
+            <Shield size={32} color="white" />
+          </div>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#111827", letterSpacing: "-0.5px" }}>
+            Set New Password
+          </h1>
+          <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6b7280" }}>
+            Choose a new password for your account
+          </p>
         </div>
 
         {!ready && !success && (
-          <div style={{ background: "white", borderRadius: 20, padding: 30, boxShadow: "0 5px 20px rgba(0,0,0,0.15)", textAlign: "center" }}>
+          <div style={{
+            background: "white", borderRadius: 16, padding: 32, textAlign: "center",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid rgba(229,231,235,0.5)",
+          }}>
             <p style={{ color: "#9ca3af", fontSize: 14, margin: 0 }}>Verifying your reset link…</p>
           </div>
         )}
 
         {success ? (
-          <div style={{ background: "white", borderRadius: 20, padding: 30, boxShadow: "0 5px 20px rgba(0,0,0,0.15)", textAlign: "center" }}>
+          <div style={{
+            background: "white", borderRadius: 16, padding: 32, textAlign: "center",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid rgba(229,231,235,0.5)",
+          }}>
             <p style={{ color: "#16a34a", fontSize: 14, margin: 0 }}>{success}</p>
             <p style={{ color: "#9ca3af", fontSize: 13, marginTop: 8 }}>Redirecting to login…</p>
           </div>
         ) : ready ? (
-          <form onSubmit={handleSubmit} style={{ background: "white", borderRadius: 20, padding: 30, boxShadow: "0 5px 20px rgba(0,0,0,0.15)" }}>
+          <form onSubmit={handleSubmit} style={{
+            background: "white", borderRadius: 16, padding: "32px 32px 28px",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid rgba(229,231,235,0.5)",
+          }}>
             <div style={{ marginBottom: 18 }}>
-              <label htmlFor="password" style={{ display: "block", marginBottom: 6, fontSize: 14, fontWeight: 500, color: "#444" }}>New Password</label>
-              <input id="password" name="password" type="password" required minLength={8} className="system-input" style={{ marginBottom: 0 }} />
+              <label htmlFor="password" className="form-label">New Password</label>
+              <input id="password" name="password" type="password" required minLength={8} className="system-input" placeholder="At least 8 characters" />
             </div>
 
             {error && (
-              <p style={{ margin: "0 0 16px 0", padding: "10px 14px", background: "#f8d7da", borderRadius: 8, fontSize: 14, color: "#721c24" }}>{error}</p>
+              <p style={{ margin: "0 0 16px 0", padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>
+                {error}
+              </p>
             )}
 
-            <button type="submit" disabled={pending} className="system-btn" style={{ width: "100%", justifyContent: "center", padding: "14px 22px" }}>
+            <button type="submit" disabled={pending} className="system-btn" style={{ width: "100%", justifyContent: "center", padding: "12px 22px", fontSize: 15 }}>
               {pending ? "Updating…" : "Update Password"}
             </button>
           </form>
