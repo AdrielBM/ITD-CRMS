@@ -36,11 +36,34 @@ export default async function ComplianceMatrixPage() {
     return (a.requirement_templates?.id ?? 0) - (b.requirement_templates?.id ?? 0);
   });
 
-  const { data: faculty } = await supabase
+  // Scope faculty list for coordinators
+  let scopedFacultyIds = [];
+  if (role === "Coordinator") {
+    const { data: progCoords } = await supabase
+      .from("program_coordinators")
+      .select("program_id")
+      .eq("user_id", user.id);
+    const progIds = (progCoords ?? []).map((pc) => pc.program_id).filter(Boolean);
+    const isDeptWide = (progCoords ?? []).some((pc) => pc.program_id === null);
+    if (progIds.length > 0 && !isDeptWide) {
+      const { data: facProfiles } = await supabase
+        .from("faculty_profiles")
+        .select("user_id")
+        .in("program_id", progIds);
+      scopedFacultyIds = (facProfiles ?? []).map((fp) => fp.user_id);
+    }
+  }
+
+  let facultyQuery = supabase
     .from("users")
     .select("id, full_name, roles!role_id!inner(name)")
-    .eq("roles.name", "Faculty")
-    .order("full_name");
+    .eq("roles.name", "Faculty");
+
+  if (scopedFacultyIds.length > 0) {
+    facultyQuery = facultyQuery.in("id", scopedFacultyIds);
+  }
+
+  const { data: faculty } = await facultyQuery.order("full_name");
 
   const instanceIds = sortedInstances.map((i) => i.id);
 
