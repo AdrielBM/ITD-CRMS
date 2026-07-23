@@ -71,6 +71,44 @@ export default async function DashboardPage() {
           .eq("current_step", 3)
       : { count: 0 };
 
+    // Analytics: submissions per category by status
+    const { data: catStats } = instanceIds.length
+      ? await supabase
+          .from("requirement_instances")
+          .select(`
+            id,
+            requirement_templates!inner ( requirement_categories ( name ) ),
+            assignments!inner ( id )
+          `)
+          .in("id", instanceIds)
+      : { data: [] };
+
+    const catMap = {};
+    for (const inst of catStats ?? []) {
+      const cat = inst.requirement_templates?.requirement_categories?.name ?? "Uncategorized";
+      for (const asgn of inst.assignments ?? []) {
+        if (!catMap[cat]) catMap[cat] = { name: cat, completed: 0, submitted: 0, needs_revision: 0, draft: 0, total: 0 };
+        catMap[cat].total++;
+      }
+    }
+    const assignmentIdsAll = (catStats ?? []).flatMap((i) => (i.assignments ?? []).map((a) => a.id));
+    if (assignmentIdsAll.length) {
+      const { data: allStatuses } = await supabase
+        .from("submissions")
+        .select("assignment_id, status")
+        .in("assignment_id", assignmentIdsAll);
+      for (const s of allStatuses ?? []) {
+        for (const inst of catStats ?? []) {
+          const asgnIds = (inst.assignments ?? []).map((a) => a.id);
+          if (asgnIds.includes(s.assignment_id)) {
+            const cat = inst.requirement_templates?.requirement_categories?.name ?? "Uncategorized";
+            if (catMap[cat] && catMap[cat][s.status] !== undefined) catMap[cat][s.status]++;
+          }
+        }
+      }
+    }
+    const categoryData = Object.values(catMap);
+
     content = (
       <ChairDashboard
         activeSemesterLabel={activeSemesterLabel}
@@ -80,6 +118,7 @@ export default async function DashboardPage() {
         assignmentCount={assignmentCount ?? 0}
         recentUsers={recentUsers ?? []}
         pendingChair={pendingChair ?? 0}
+        categoryData={categoryData}
       />
     );
   } else if (role === "Secretary") {
