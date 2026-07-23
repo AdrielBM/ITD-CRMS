@@ -14,6 +14,7 @@ import {
   UserPlus,
   Settings,
   Bell,
+  Building2,
   LogOut,
 } from "lucide-react";
 
@@ -131,6 +132,16 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
             </a>
           );
         })}
+
+        {role === "Student Org Leader" && (
+          <a
+            href="/organization"
+            className={`sidebar-link${isActive("/organization") ? " active" : ""}`}
+          >
+            <Building2 size={18} />
+            My Organization
+          </a>
+        )}
 
         {role === "Chair" && (
           <>
