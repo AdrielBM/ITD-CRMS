@@ -95,3 +95,21 @@ export async function deleteSemester(formData) {
   if (error) return { error: error.message };
   revalidatePath(PATH);
 }
+
+// ---------- Program Coordinators ----------
+export async function assignProgramCoordinator(formData) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("program_coordinators").insert({
+    user_id: formData.get("user_id"),
+    program_id: formData.get("program_id") ? Number(formData.get("program_id")) : null,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(PATH);
+}
+
+export async function removeProgramCoordinator(formData) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("program_coordinators").delete().eq("id", formData.get("id"));
+  if (error) return { error: error.message };
+  revalidatePath(PATH);
+}
