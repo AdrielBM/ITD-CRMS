@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { logoutAction } from "@/app/(auth)/actions";
-import { getUnreadCount } from "@/app/notifications/count";
 import {
   LayoutDashboard,
   Users,
@@ -40,7 +39,7 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
   const isReviewer = ["Chair", "Secretary", "Records", "Coordinator"].includes(role);
 
   useEffect(() => {
-    getUnreadCount().then(setUnreadCount).catch(() => {});
+    fetch("/api/unread-count").then((r) => r.json()).then((d) => setUnreadCount(d.count ?? 0)).catch(() => {});
   }, []);
 
   function isActive(href) {
