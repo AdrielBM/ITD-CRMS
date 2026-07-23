@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserAccess } from "@/lib/auth/permissions";
 import AppShell from "@/components/AppShell";
-import RoleSelector from "./role-selector";
+import MultiRoleManager from "./multi-role-manager";
 import { toggleUserActive, resetUserPassword } from "./actions";
 
 export default async function AdminUsersPage() {
@@ -14,10 +14,21 @@ export default async function AdminUsersPage() {
   const [{ data: users }, { data: roles }] = await Promise.all([
     supabase
       .from("users")
-      .select("id, email, full_name, is_active, created_at, roles ( id, name )")
+      .select("id, email, full_name, is_active, created_at")
       .order("created_at", { ascending: false }),
     supabase.from("roles").select("id, name").order("id"),
   ]);
+
+  const userIds = (users ?? []).map((u) => u.id);
+  const { data: userRoles } = userIds.length
+    ? await supabase.from("user_roles").select("user_id, roles ( id, name )").in("user_id", userIds)
+    : { data: [] };
+
+  const userRolesMap = {};
+  for (const ur of userRoles ?? []) {
+    if (!userRolesMap[ur.user_id]) userRolesMap[ur.user_id] = [];
+    userRolesMap[ur.user_id].push(ur.roles);
+  }
 
   return (
     <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/admin/users">
@@ -32,7 +43,7 @@ export default async function AdminUsersPage() {
               <tr>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Role</th>
+                <th>Roles</th>
                 <th>Status</th>
                 <th>Reset Password</th>
               </tr>
@@ -46,7 +57,11 @@ export default async function AdminUsersPage() {
                   <td style={{ fontWeight: 500 }}>{u.full_name}</td>
                   <td style={{ color: "#6b7280", fontSize: 14 }}>{u.email}</td>
                   <td>
-                    <RoleSelector userId={u.id} currentRoleId={u.roles?.id} roles={roles ?? []} />
+                    <MultiRoleManager
+                      userId={u.id}
+                      assignedRoles={userRolesMap[u.id] ?? []}
+                      allRoles={roles ?? []}
+                    />
                   </td>
                   <td>
                     <form action={toggleUserActive}>

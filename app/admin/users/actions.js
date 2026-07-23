@@ -45,3 +45,27 @@ export async function resetUserPassword(formData) {
   revalidatePath("/admin/users");
   return { success: "Password reset successful." };
 }
+
+export async function addUserRole(formData) {
+  const supabase = await createClient();
+  const userId = formData.get("user_id");
+  const roleName = formData.get("role_name");
+
+  const { data: role } = await supabase.from("roles").select("id").eq("name", roleName).single();
+  if (!role) return { error: "Role not found" };
+
+  await supabase.from("user_roles").upsert({ user_id: userId, role_id: role.id }, { onConflict: "user_id,role_id" });
+  revalidatePath("/admin/users");
+}
+
+export async function removeUserRole(formData) {
+  const supabase = await createClient();
+  const userId = formData.get("user_id");
+  const roleName = formData.get("role_name");
+
+  const { data: role } = await supabase.from("roles").select("id").eq("name", roleName).single();
+  if (!role) return { error: "Role not found" };
+
+  await supabase.from("user_roles").delete().eq("user_id", userId).eq("role_id", role.id);
+  revalidatePath("/admin/users");
+}
