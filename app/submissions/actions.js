@@ -158,6 +158,19 @@ export async function submitRequirement(formData) {
 
   if (updateError) throw new Error(updateError.message);
 
+  // Notify the next reviewer (Coordinator at step 0)
+  const { data: coordRole } = await supabase.from("roles").select("id").eq("name", "Coordinator").single();
+  if (coordRole) {
+    const { data: reviewers } = await supabase.from("users").select("id").eq("role_id", coordRole.id);
+    for (const r of reviewers ?? []) {
+      await supabase.from("notifications").insert({
+        user_id: r.id, type: "submission_submitted",
+        title: "New submission awaiting review",
+        body: `Submission #${submissionId} has been submitted.`, submission_id: submissionId,
+      });
+    }
+  }
+
   revalidatePath("/submissions");
   revalidatePath("/submissions/review");
   return { success: true, version: nextVersion, files: fileRows.length };
@@ -215,6 +228,34 @@ export async function approveSubmission(formData) {
 
   if (updateError) throw new Error(updateError.message);
 
+  // Notify the next reviewer or faculty if completed
+  if (newStatus === "completed") {
+    const { data: sub } = await supabase.from("submissions").select("created_by").eq("id", submissionId).single();
+    if (sub) {
+      await supabase.from("notifications").insert({
+        user_id: sub.created_by, type: "submission_completed",
+        title: "Submission fully approved",
+        body: `Submission #${submissionId} has passed all review steps.`, submission_id: submissionId,
+      });
+    }
+  } else {
+    const nextStepDef = WORKFLOW_STEPS[nextStep];
+    if (nextStepDef) {
+      const { data: roleRow } = await supabase.from("roles").select("id").eq("name", nextStepDef.role).single();
+      if (roleRow) {
+        const { data: reviewers } = await supabase.from("users").select("id").eq("role_id", roleRow.id);
+        for (const r of reviewers ?? []) {
+          await supabase.from("notifications").insert({
+            user_id: r.id, type: "submission_approved",
+            title: "New submission for review",
+            body: `Submission #${submissionId} has been approved and is awaiting ${nextStepDef.role} review.`,
+            submission_id: submissionId,
+          });
+        }
+      }
+    }
+  }
+
   revalidatePath("/submissions");
   revalidatePath("/submissions/review");
   return { success: true, newStatus };
@@ -268,6 +309,17 @@ export async function rejectSubmission(formData) {
     .eq("id", submissionId);
 
   if (updateError) throw new Error(updateError.message);
+
+  // Notify the faculty that their submission needs revision
+  const { data: subData } = await supabase.from("submissions").select("created_by").eq("id", submissionId).single();
+  if (subData) {
+    await supabase.from("notifications").insert({
+      user_id: subData.created_by, type: "submission_needs_revision",
+      title: "Submission needs revision",
+      body: `Submission #${submissionId} was rejected by ${role}. Remarks: ${remarks}`,
+      submission_id: submissionId,
+    });
+  }
 
   revalidatePath("/submissions");
   revalidatePath("/submissions/review");

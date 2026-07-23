@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { logoutAction } from "@/app/(auth)/actions";
+import { getUnreadCount } from "@/app/notifications/count";
 import {
   LayoutDashboard,
   Users,
@@ -9,6 +13,7 @@ import {
   GraduationCap,
   UserPlus,
   Settings,
+  Bell,
   LogOut,
 } from "lucide-react";
 
@@ -29,7 +34,12 @@ const SETTINGS_LINKS = [
 ];
 
 export default function Sidebar({ fullName, email, role, currentPath }) {
+  const [unreadCount, setUnreadCount] = useState(0);
   const isReviewer = ["Chair", "Secretary", "Records", "Coordinator"].includes(role);
+
+  useEffect(() => {
+    getUnreadCount().then(setUnreadCount).catch(() => {});
+  }, []);
 
   function isActive(href) {
     if (href === "/dashboard") return currentPath === "/dashboard";
@@ -62,6 +72,27 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
             </a>
           );
         })}
+
+        <a
+          href="/notifications"
+          className={`sidebar-link${isActive("/notifications") ? " active" : ""}`}
+        >
+          <div style={{ position: "relative" }}>
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span style={{
+                position: "absolute", top: -6, right: -6,
+                background: "#ea580c", color: "white", fontSize: 10,
+                borderRadius: "50%", width: 16, height: 16,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontWeight: 700, lineHeight: 1,
+              }}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </div>
+          Notifications
+        </a>
 
         {isReviewer && (
           <>
