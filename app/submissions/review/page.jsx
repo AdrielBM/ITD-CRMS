@@ -13,18 +13,18 @@ const WORKFLOW_STEPS = [
 
 export default async function ReviewQueuePage() {
   const supabase = await createClient();
-  const { user, role, profile } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
 
-  const isReviewer = ["Coordinator", "Records", "Secretary", "Chair"].includes(role);
+  const isReviewer = ["Coordinator", "Records", "Secretary", "Chair"].some((r) => roles.includes(r));
   if (!isReviewer) redirect("/dashboard");
 
-  const mySteps = WORKFLOW_STEPS.filter((s) => s.role === role);
-  const stepLabel = mySteps[0]?.label ?? "Review";
+  const mySteps = WORKFLOW_STEPS.filter((s) => roles.includes(s.role));
+  const stepLabel = mySteps.map((s) => s.label).join(" + ") || "Review";
 
   // Scope coordinator's view to their assigned programs
   let scopedFacultyIds = [];
-  if (role === "Coordinator") {
+  if (roles.includes("Coordinator")) {
     const { data: progCoords } = await supabase
       .from("program_coordinators")
       .select("program_id")
@@ -92,7 +92,7 @@ export default async function ReviewQueuePage() {
   const { data: reviewedSubmissions } = await reviewedQuery.order("updated_at", { ascending: false }).limit(20);
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/submissions/review">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/submissions/review">
       <div className="page-header">
         <h1>{stepLabel}</h1>
         <p>Submissions awaiting your review</p>
@@ -104,7 +104,7 @@ export default async function ReviewQueuePage() {
           <strong>Workflow:</strong>{" "}
           {WORKFLOW_STEPS.map((s, i) => (
             <span key={s.role}>
-              <span className={`badge ${s.role === role ? "badge-blue" : "badge-gray"}`}>{s.label}</span>
+              <span className={`badge ${roles.includes(s.role) ? "badge-blue" : "badge-gray"}`}>{s.label}</span>
               {i < WORKFLOW_STEPS.length - 1 && <span style={{ color: "#d1d5db", margin: "0 4px" }}>→</span>}
             </span>
           ))}
@@ -154,7 +154,7 @@ export default async function ReviewQueuePage() {
 
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ display: "block", fontSize: 13, color: "#6b7280", marginBottom: 4 }}>
-                      Remarks {role !== "Chair" ? "(required for rejection)" : ""}
+                      Remarks {!roles.includes("Chair") ? "(required for rejection)" : ""}
                     </label>
                     <textarea name="remarks" rows={3} className="input" style={{ minHeight: 60 }} placeholder="Add your remarks…" />
                   </div>
@@ -188,7 +188,7 @@ export default async function ReviewQueuePage() {
                   {(reviewedSubmissions ?? []).map((sub) => {
                     const a = sub.assignments;
                     const ri = a?.requirement_instances;
-                    const app = sub.approvals?.find((ap) => ap.step_role === role);
+                    const app = sub.approvals?.find((ap) => roles.includes(ap.step_role));
                     return (
                       <tr key={sub.id}>
                         <td style={{ fontWeight: 500 }}>{ri?.requirement_templates?.name}</td>

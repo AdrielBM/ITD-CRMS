@@ -5,8 +5,8 @@ import { getCurrentUserAccess } from "@/lib/auth/permissions";
 import { revalidatePath } from "next/cache";
 
 export async function getOrganizations() {
-  const { role } = await getCurrentUserAccess();
-  if (role !== "Chair") throw new Error("Unauthorized");
+  const { roles } = await getCurrentUserAccess();
+  if (!roles.includes("Chair")) throw new Error("Unauthorized");
 
   const supabase = await createClient();
 
@@ -26,8 +26,8 @@ export async function getOrganizations() {
 }
 
 export async function createOrganization(formData) {
-  const { role } = await getCurrentUserAccess();
-  if (role !== "Chair") throw new Error("Unauthorized");
+  const { roles } = await getCurrentUserAccess();
+  if (!roles.includes("Chair")) throw new Error("Unauthorized");
 
   const supabase = await createClient();
 
@@ -42,8 +42,8 @@ export async function createOrganization(formData) {
 }
 
 export async function updateOrganization(formData) {
-  const { role } = await getCurrentUserAccess();
-  if (role !== "Chair") throw new Error("Unauthorized");
+  const { roles } = await getCurrentUserAccess();
+  if (!roles.includes("Chair")) throw new Error("Unauthorized");
 
   const supabase = await createClient();
 
@@ -64,8 +64,8 @@ export async function updateOrganization(formData) {
 }
 
 export async function deleteOrganization(formData) {
-  const { role } = await getCurrentUserAccess();
-  if (role !== "Chair") throw new Error("Unauthorized");
+  const { roles } = await getCurrentUserAccess();
+  if (!roles.includes("Chair")) throw new Error("Unauthorized");
 
   const supabase = await createClient();
   const id = Number(formData.get("id"));

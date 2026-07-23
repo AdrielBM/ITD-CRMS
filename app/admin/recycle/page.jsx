@@ -37,9 +37,9 @@ function getNameColumn(table) {
 
 export default async function RecycleBinPage() {
   const supabase = await createClient();
-  const { user, role, profile } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
-  if (role !== "Chair") redirect("/dashboard");
+  if (!roles.includes("Chair")) redirect("/dashboard");
 
   const allItems = [];
 
@@ -66,7 +66,7 @@ export default async function RecycleBinPage() {
   allItems.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/admin/recycle">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/admin/recycle">
       <div className="page-header">
         <h1>Recycle Bin</h1>
         <p>Recently deleted items — restore or permanently delete</p>

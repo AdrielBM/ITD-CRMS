@@ -13,9 +13,9 @@ function formatDate(d) {
 
 export default async function ActivityLogPage({ searchParams }) {
   const supabase = await createClient();
-  const { user, role, profile } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
-  if (role !== "Chair") redirect("/dashboard");
+  if (!roles.includes("Chair")) redirect("/dashboard");
 
   const page = Math.max(1, Number(searchParams?.page) || 1);
   const perPage = 30;
@@ -49,7 +49,7 @@ export default async function ActivityLogPage({ searchParams }) {
   const STEP_LABELS = ["Coordinator", "Records", "Secretary", "Chair"];
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/admin/activity">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/admin/activity">
       <div className="page-header">
         <h1>Activity Log</h1>
         <p>Audit trail of all approval and rejection actions</p>

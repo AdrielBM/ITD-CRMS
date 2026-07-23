@@ -33,7 +33,7 @@ const TYPE_LABELS = {
 
 export default async function NotificationsPage() {
   const supabase = await createClient();
-  const { user, role, profile } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
 
   const { data: notifications } = await supabase
@@ -46,7 +46,7 @@ export default async function NotificationsPage() {
   const unreadCount = (notifications ?? []).filter((n) => !n.is_read).length;
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/notifications">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/notifications">
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h1>Notifications</h1>

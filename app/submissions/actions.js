@@ -182,7 +182,7 @@ export async function submitRequirement(formData) {
  */
 export async function approveSubmission(formData) {
   const supabase = await createClient();
-  const { user, role } = await getCurrentUserAccess(supabase);
+  const { user, role, roles } = await getCurrentUserAccess(supabase);
   if (!user) throw new Error("Not authenticated");
 
   const submissionId = parseInt(formData.get("submission_id"));
@@ -199,7 +199,7 @@ export async function approveSubmission(formData) {
 
   const stepDef = WORKFLOW_STEPS[sub.current_step];
   if (!stepDef) throw new Error("No workflow step defined");
-  if (stepDef.role !== role) throw new Error(`Only ${stepDef.role} can approve at this step`);
+  if (!roles.includes(stepDef.role)) throw new Error(`Only ${stepDef.role} can approve at this step`);
 
   const nextStep = sub.current_step + 1;
   const newStatus = nextStep >= 4 ? "completed" : "submitted";
@@ -208,7 +208,7 @@ export async function approveSubmission(formData) {
   const { error: appError } = await supabase.from("approvals").insert({
     submission_id: submissionId,
     step_number: sub.current_step,
-    step_role: role,
+    step_role: stepDef.role,
     reviewer_id: user.id,
     status: "approved",
     remarks,
@@ -267,7 +267,7 @@ export async function approveSubmission(formData) {
  */
 export async function rejectSubmission(formData) {
   const supabase = await createClient();
-  const { user, role } = await getCurrentUserAccess(supabase);
+  const { user, role, roles } = await getCurrentUserAccess(supabase);
   if (!user) throw new Error("Not authenticated");
 
   const submissionId = parseInt(formData.get("submission_id"));
@@ -285,13 +285,13 @@ export async function rejectSubmission(formData) {
 
   const stepDef = WORKFLOW_STEPS[sub.current_step];
   if (!stepDef) throw new Error("No workflow step defined");
-  if (stepDef.role !== role) throw new Error(`Only ${stepDef.role} can reject at this step`);
+  if (!roles.includes(stepDef.role)) throw new Error(`Only ${stepDef.role} can reject at this step`);
 
   // Record the rejection
   const { error: appError } = await supabase.from("approvals").insert({
     submission_id: submissionId,
     step_number: sub.current_step,
-    step_role: role,
+    step_role: stepDef.role,
     reviewer_id: user.id,
     status: "rejected",
     remarks,

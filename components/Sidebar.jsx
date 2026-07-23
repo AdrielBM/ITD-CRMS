@@ -34,11 +34,13 @@ const SETTINGS_LINKS = [
   { href: "/settings/academic", label: "Academic Structure", icon: GraduationCap },
 ];
 
-export default function Sidebar({ fullName, email, role, currentPath }) {
+export default function Sidebar({ fullName, email, role, roles = [], currentPath }) {
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
-  const isReviewer = ["Chair", "Secretary", "Records", "Coordinator"].includes(role);
+  const isReviewer = ["Chair", "Secretary", "Records", "Coordinator"].some((r) => roles.includes(r));
+  const isChair = roles.includes("Chair");
+  const isStudentOrgLeader = roles.includes("Student Org Leader");
 
   useEffect(() => {
     fetch("/api/unread-count").then((r) => r.json()).then((d) => setUnreadCount(d.count ?? 0)).catch(() => {});
@@ -58,7 +60,7 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
 
       <div className="sidebar-user">
         <p className="sidebar-user-name">{fullName ?? email}</p>
-        <p className="sidebar-user-role">{role ?? "No role"}</p>
+        <p className="sidebar-user-role">{roles.length > 0 ? roles.join(", ") : "No role"}</p>
       </div>
 
       <nav className="sidebar-nav">
@@ -135,7 +137,7 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
           );
         })}
 
-        {role === "Student Org Leader" && (
+        {isStudentOrgLeader && (
           <a
             href="/organization"
             className={`sidebar-link${isActive("/organization") ? " active" : ""}`}
@@ -145,7 +147,7 @@ export default function Sidebar({ fullName, email, role, currentPath }) {
           </a>
         )}
 
-        {role === "Chair" && (
+        {isChair && (
           <>
             <div className="sidebar-section-label">
               Administration

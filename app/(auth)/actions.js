@@ -51,13 +51,13 @@ export async function createAccountAction(formData) {
   } = await supabase.auth.getUser();
   if (!caller) return { error: "Not signed in." };
 
-  const { data: callerProfile } = await supabase
-    .from("users")
-    .select("roles!role_id ( name )")
-    .eq("id", caller.id)
-    .single();
+  const { data: callerRoles } = await supabase
+    .from("user_roles")
+    .select("role:roles!role_id(name)")
+    .eq("user_id", caller.id);
 
-  if (callerProfile?.roles?.name !== "Chair") {
+  const isChair = (callerRoles ?? []).some((ur) => ur.role?.name === "Chair");
+  if (!isChair) {
     return { error: "Only the Department Chair can create accounts." };
   }
 

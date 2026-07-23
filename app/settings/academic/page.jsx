@@ -11,7 +11,7 @@ import {
 
 export default async function AcademicSettingsPage() {
   const supabase = await createClient();
-  const { user, role, profile, permissions } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile, permissions } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
 
   const canWritePrograms = can(permissions, "Programs", "CRUD");
@@ -31,7 +31,7 @@ export default async function AcademicSettingsPage() {
   ]);
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/settings/academic">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/settings/academic">
       <div className="page-header">
         <h1>Academic Structure</h1>
         <p>Programs, academic years, and semesters</p>

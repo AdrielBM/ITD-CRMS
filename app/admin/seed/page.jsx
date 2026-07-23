@@ -6,9 +6,9 @@ import SeedForm from "./seed-form";
 
 export default async function SeedPage() {
   const supabase = await createClient();
-  const { user, role, profile } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
-  if (role !== "Chair") redirect("/dashboard");
+  if (!roles.includes("Chair")) redirect("/dashboard");
 
   // Show currently seeded data counts
   const [
@@ -26,7 +26,7 @@ export default async function SeedPage() {
   ]);
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/admin/seed">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/admin/seed">
       <div className="page-header">
         <h1>Seed Data</h1>
         <p>Populate the system with sample data for testing</p>

@@ -17,7 +17,7 @@ import {
 
 export default async function RequirementsPage() {
   const supabase = await createClient();
-  const { user, role, profile, permissions } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile, permissions } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
 
   const canWrite = can(permissions, "Requirements", "CRUD");
@@ -41,7 +41,7 @@ export default async function RequirementsPage() {
   ]);
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/requirements">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/requirements">
       <div className="page-header">
         <h1>Requirement Management</h1>
         <p>Categories, templates, instances, and assignments across semesters</p>

@@ -22,10 +22,10 @@ const WORKFLOW_STEPS = ["Coordinator", "Records", "Secretary", "Chair"];
 
 export default async function SubmissionsPage() {
   const supabase = await createClient();
-  const { user, role, profile } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
 
-  const isFaculty = role === "Faculty";
+  const isFaculty = roles.includes("Faculty");
 
   let query = supabase.from("assignments").select(`
     id,
@@ -45,7 +45,7 @@ export default async function SubmissionsPage() {
   const { data: assignments } = await query.order("requirement_instances.requirement_templates(name)");
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/submissions">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/submissions">
       <div className="page-header">
         <h1>Submissions</h1>
         <p>{isFaculty ? "Your requirements — submit files for review" : "All submissions across the department"}</p>

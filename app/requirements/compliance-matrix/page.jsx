@@ -14,7 +14,7 @@ const STATUS_CONFIG = {
 
 export default async function ComplianceMatrixPage() {
   const supabase = await createClient();
-  const { user, role, profile } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
 
   const { data: activeSemester } = await supabase
@@ -38,7 +38,7 @@ export default async function ComplianceMatrixPage() {
 
   // Scope faculty list for coordinators
   let scopedFacultyIds = [];
-  if (role === "Coordinator") {
+  if (roles.includes("Coordinator")) {
     const { data: progCoords } = await supabase
       .from("program_coordinators")
       .select("program_id")
@@ -89,7 +89,7 @@ export default async function ComplianceMatrixPage() {
   }
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/requirements/compliance-matrix">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/requirements/compliance-matrix">
       <div className="page-header">
         <h1>Compliance Matrix</h1>
         <p>

@@ -26,7 +26,7 @@ export default async function OrganizationPage() {
 
   if (!org) {
     return (
-      <AppShell fullName={profile?.full_name} email={user.email} role="Student Org Leader" currentPath="/organization">
+<AppShell fullName={profile?.full_name} email={user.email} role={roles[0] ?? "Student Org Leader"} roles={roles} currentPath="/organization">
         <div className="page-header">
           <h1>My Organization</h1>
           <p>Student Org Leader</p>
@@ -86,7 +86,7 @@ export default async function OrganizationPage() {
   }
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role="Student Org Leader" currentPath="/organization">
+    <AppShell fullName={profile?.full_name} email={user.email} role={roles[0] ?? "Student Org Leader"} roles={roles} currentPath="/organization">
       <div className="page-header">
         <h1>{org.name}</h1>
         <p>{org.acronym ? `${org.acronym} · ` : ""}Student Organization Compliance</p>

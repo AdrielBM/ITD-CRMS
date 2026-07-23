@@ -16,8 +16,15 @@ function daysUntil(dateStr) {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { user, role, profile, error } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile, error } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
+
+  const isChair = roles.includes("Chair");
+  const isSecretary = roles.includes("Secretary");
+  const isRecords = roles.includes("Records");
+  const isCoordinator = roles.includes("Coordinator");
+  const isFaculty = roles.includes("Faculty");
+  const isOrgLeader = roles.includes("Student Org Leader");
 
   const [{ data: activeSemester }, { data: coordinatorPrograms }, { count: organizationCount }] =
     await Promise.all([
@@ -26,7 +33,7 @@ export default async function DashboardPage() {
         .select("id, name, academic_years ( label )")
         .eq("is_active", true)
         .maybeSingle(),
-      role === "Coordinator"
+      isCoordinator
         ? supabase
             .from("program_coordinators")
             .select("program_id")
@@ -44,7 +51,7 @@ export default async function DashboardPage() {
     .select("id, roles!role_id!inner(name)", { count: "exact", head: true })
     .eq("roles.name", "Faculty");
 
-  if (role === "Coordinator" && coordinatorProgramIds.length > 0 && !isDepartmentWide) {
+  if (isCoordinator && coordinatorProgramIds.length > 0 && !isDepartmentWide) {
     const { data: scopedFaculty } = await supabase
       .from("faculty_profiles")
       .select("user_id")
@@ -80,9 +87,10 @@ export default async function DashboardPage() {
         .in("requirement_instance_id", instanceIds)
     : { count: 0 };
 
-  let content = null;
+  // Build dashboard sections for all user roles
+  const sections = [];
 
-  if (role === "Chair") {
+  if (isChair) {
     const { data: recentUsers } = await supabase
       .from("users")
       .select("id, full_name, roles!role_id ( name )")
@@ -97,7 +105,6 @@ export default async function DashboardPage() {
           .eq("current_step", 3)
       : { count: 0 };
 
-    // Analytics: submissions per category by status
     const { data: catStats } = instanceIds.length
       ? await supabase
           .from("requirement_instances")
@@ -135,19 +142,10 @@ export default async function DashboardPage() {
     }
     const categoryData = Object.values(catMap);
 
-    content = (
-      <ChairDashboard
-        activeSemesterLabel={activeSemesterLabel}
-        facultyCount={facultyCount ?? 0}
-        organizationCount={organizationCount ?? 0}
-        instanceCount={instanceList.length}
-        assignmentCount={assignmentCount ?? 0}
-        recentUsers={recentUsers ?? []}
-        pendingChair={pendingChair ?? 0}
-        categoryData={categoryData}
-      />
-    );
-  } else if (role === "Secretary") {
+    sections.push(<ChairDashboard key="chair" activeSemesterLabel={activeSemesterLabel} facultyCount={facultyCount ?? 0} organizationCount={organizationCount ?? 0} instanceCount={instanceList.length} assignmentCount={assignmentCount ?? 0} recentUsers={recentUsers ?? []} pendingChair={pendingChair ?? 0} categoryData={categoryData} />);
+  }
+
+  if (isSecretary) {
     const upcomingInstances = instanceList.filter((i) => {
       const left = daysUntil(i.due_date);
       return left !== null && left >= 0 && left <= 14;
@@ -165,17 +163,10 @@ export default async function DashboardPage() {
           .eq("current_step", 2)
       : { count: 0 };
 
-    content = (
-      <SecretaryDashboard
-        activeSemesterLabel={activeSemesterLabel}
-        facultyCount={facultyCount ?? 0}
-        organizationCount={organizationCount ?? 0}
-        upcomingInstances={upcomingInstances}
-        overdueCount={overdueCount}
-        pendingSecretary={pendingSecretary ?? 0}
-      />
-    );
-  } else if (role === "Records") {
+    sections.push(<SecretaryDashboard key="secretary" activeSemesterLabel={activeSemesterLabel} facultyCount={facultyCount ?? 0} organizationCount={organizationCount ?? 0} upcomingInstances={upcomingInstances} overdueCount={overdueCount} pendingSecretary={pendingSecretary ?? 0} />);
+  }
+
+  if (isRecords) {
     const { count: pendingRecords } = activeSemester
       ? await supabase
           .from("submissions")
@@ -184,16 +175,10 @@ export default async function DashboardPage() {
           .eq("current_step", 1)
       : { count: 0 };
 
-    content = (
-      <RecordsDashboard
-        activeSemesterLabel={activeSemesterLabel}
-        assignmentCount={assignmentCount ?? 0}
-        instances={instanceList}
-        pendingRecords={pendingRecords ?? 0}
-      />
-    );
-  } else if (role === "Coordinator") {
-    // Scope pending submissions to coordinator's program faculty
+    sections.push(<RecordsDashboard key="records" activeSemesterLabel={activeSemesterLabel} assignmentCount={assignmentCount ?? 0} instances={instanceList} pendingRecords={pendingRecords ?? 0} />);
+  }
+
+  if (isCoordinator) {
     let pendingQuery = supabase
       .from("submissions")
       .select("id", { count: "exact", head: true })
@@ -217,24 +202,17 @@ export default async function DashboardPage() {
       ? await pendingQuery
       : { count: 0 };
 
-    content = (
-      <CoordinatorDashboard
-        activeSemesterLabel={activeSemesterLabel}
-        facultyCount={facultyCount ?? 0}
-        instances={instanceList}
-        pendingCoordinator={pendingCoordinator ?? 0}
-        coordinatorProgramIds={coordinatorProgramIds}
-        isDepartmentWide={isDepartmentWide}
-      />
-    );
-  } else if (role === "Faculty") {
+    sections.push(<CoordinatorDashboard key="coordinator" activeSemesterLabel={activeSemesterLabel} facultyCount={facultyCount ?? 0} instances={instanceList} pendingCoordinator={pendingCoordinator ?? 0} coordinatorProgramIds={coordinatorProgramIds} isDepartmentWide={isDepartmentWide} />);
+  }
+
+  if (isFaculty || isOrgLeader) {
     const { data: myAssignments } = instanceIds.length
       ? await supabase
           .from("assignments")
           .select(
             "id, requirement_instances ( due_date, requirement_templates ( name, requirement_categories ( name ) ) )"
           )
-          .eq("faculty_id", user.id)
+          .or(`faculty_id.eq.${user.id},organization_id.not.is.null`)
           .in("requirement_instance_id", instanceIds)
       : { data: [] };
 
@@ -256,22 +234,17 @@ export default async function DashboardPage() {
       (a) => statusMap[a.id]?.status === "needs_revision"
     ).length;
 
-    content = (
-      <FacultyDashboard
-        activeSemesterLabel={activeSemesterLabel}
-        myAssignments={myAssignments ?? []}
-        submissionStatuses={submissionStatuses ?? []}
-        completedCount={completedCount}
-        returnedCount={returnedCount}
-      />
-    );
+    sections.push(<FacultyDashboard key="faculty" activeSemesterLabel={activeSemesterLabel} myAssignments={myAssignments ?? []} submissionStatuses={submissionStatuses ?? []} completedCount={completedCount} returnedCount={returnedCount} />);
   }
 
+  // Determine display role label
+  const displayRole = roles.length > 0 ? roles.join(", ") : null;
+
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/dashboard">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/dashboard">
       <div className="page-header">
         <h1>Dashboard</h1>
-        <p>{role ? `Signed in as ${role}` : "No role assigned yet"}</p>
+        <p>{displayRole ? `Signed in as ${displayRole}` : "No role assigned yet"}</p>
       </div>
       <div className="page-body">
         {error && (
@@ -279,12 +252,21 @@ export default async function DashboardPage() {
             Role lookup error: {error}
           </div>
         )}
-        {!role && !error && (
+        {roles.length === 0 && !error && (
           <div className="card" style={{ textAlign: "center", color: "#9ca3af" }}>
             Your account has no role assigned yet. Ask the Department Chair to set one.
           </div>
         )}
-        {content}
+        {sections.length === 0 && roles.length > 0 && (
+          <div className="card" style={{ textAlign: "center", color: "#9ca3af" }}>
+            No dashboard data available for your roles.
+          </div>
+        )}
+        {sections.map((section, i) => (
+          <div key={i} style={{ marginBottom: 28 }}>
+            {section}
+          </div>
+        ))}
       </div>
     </AppShell>
   );

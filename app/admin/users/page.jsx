@@ -7,11 +7,11 @@ import { toggleUserActive, resetUserPassword } from "./actions";
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
-  const { user, role, profile } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
-  if (role !== "Chair") redirect("/dashboard");
+  if (!roles.includes("Chair")) redirect("/dashboard");
 
-  const [{ data: users }, { data: roles }] = await Promise.all([
+  const [{ data: users }, { data: allRoles }] = await Promise.all([
     supabase
       .from("users")
       .select("id, email, full_name, is_active, created_at")
@@ -31,7 +31,7 @@ export default async function AdminUsersPage() {
   }
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/admin/users">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/admin/users">
       <div className="page-header">
         <h1>User Management</h1>
         <p>Manage users, roles, and account status</p>
@@ -60,7 +60,7 @@ export default async function AdminUsersPage() {
                     <MultiRoleManager
                       userId={u.id}
                       assignedRoles={userRolesMap[u.id] ?? []}
-                      allRoles={roles ?? []}
+                      allRoles={allRoles ?? []}
                     />
                   </td>
                   <td>

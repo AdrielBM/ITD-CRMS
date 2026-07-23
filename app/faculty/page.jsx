@@ -6,7 +6,7 @@ import { upsertFacultyProfile } from "./actions";
 
 export default async function FacultyPage() {
   const supabase = await createClient();
-  const { user, role, profile, permissions } = await getCurrentUserAccess(supabase);
+  const { user, role, roles, profile, permissions } = await getCurrentUserAccess(supabase);
   if (!user) redirect("/login");
 
   const canWrite = can(permissions, "Faculty", "CRUD");
@@ -21,7 +21,7 @@ export default async function FacultyPage() {
   if (facultyError) console.error("Faculty query error:", facultyError);
 
   return (
-    <AppShell fullName={profile?.full_name} email={user.email} role={role} currentPath="/faculty">
+    <AppShell fullName={profile?.full_name} email={user.email} role={role} roles={roles} currentPath="/faculty">
       <div className="page-header">
         <h1>Faculty</h1>
         <p>Manage program, position, and employment type for faculty accounts</p>
