@@ -159,6 +159,7 @@ export default async function ComplianceMatrixPage() {
           <span className="badge badge-green">Approved</span>
           <span className="badge badge-gray" style={{ opacity: 0.4 }}>N/A Not assigned</span>
           <a href="/submissions" className="btn btn-primary btn-sm" style={{ marginLeft: "auto" }}>Go to Submissions</a>
+          <a href="/requirements/compliance-matrix/export" className="btn btn-secondary btn-sm">Export CSV</a>
         </div>
       </div>
     </AppShell>
